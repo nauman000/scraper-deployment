@@ -703,12 +703,66 @@ class investor(scrapy.Spider):
                                         if (new_loop_funding_round['stage'] == old_funding_round['stage']) and (new_loop_funding_round['date']  == old_funding_round['date']) and (new_loop_funding_round['amount'] == old_funding_round['amount']):
                                             funding_round_data_existed = False
                                             break
+                                        elif (new_loop_funding_round['stage'] == old_funding_round['stage']) and (new_loop_funding_round['date']  == old_funding_round['date']):
+                                            funding_round_data_existed = False
+                                            sql = f"UPDATE funding_rounds set amount='{new_loop_funding_round['amount']}' where id={old_funding_round['id']}"
+                                            mycursor.execute(sql)
+                                            mydb.commit()
+                                            break
+
                                     if funding_round_data_existed:
                                         sql = "INSERT INTO funding_rounds (funding_id,stage,date,amount) VALUES (%s,%s,%s,%s)"
                                         val = (inner_loop_update_funding,new_loop_funding_round['stage'] ,new_loop_funding_round['date']  , new_loop_funding_round['amount'])
                                         mycursor.execute(sql, val)
                                         mydb.commit()
                                 break
+
+                            elif (new_loop_past_investments['company'] == old_past_investments['company']):
+                                past_investment_existed = False
+                                new_loop_past_investments['coinvestor_names'] = new_loop_past_investments['coinvestor_names'].replace("'",' ')
+                                sql = f"UPDATE past_investment_records set total_raised='{new_loop_past_investments['total_raised']}',co_investors='{new_loop_past_investments['coinvestor_names']}' where funding_id={old_past_investments['funding_id']}"
+                                mycursor.execute(sql)
+                                mydb.commit()
+                                inner_loop_update_funding = old_past_investments['funding_id']
+
+                                sql_read_update_funding_round = f'SELECT * FROM funding_rounds where funding_rounds.funding_id="{inner_loop_update_funding}";'
+                                mycursor.execute(sql_read_update_funding_round)
+                                desc = mycursor.description
+                                column_names = [col[0] for col in desc]
+                                get_funding_round_data_db_update = [dict(zip(column_names, row)) for row in mycursor.fetchall()]
+
+                                for new_loop_funding_round in new_loop_past_investments['funding_rounds']:
+                                    funding_round_data_existed= True
+                                    for old_funding_round in get_funding_round_data_db_update:
+                                        try:
+                                            check_just = new_loop_funding_round['date']
+                                        except:
+                                            new_loop_funding_round['date'] = old_funding_round['date']
+                                        try:
+                                            check_just = new_loop_funding_round['amount']
+                                        except:
+                                            new_loop_funding_round['amount'] = old_funding_round['amount']
+
+
+                                        if (new_loop_funding_round['stage'] == old_funding_round['stage']) and (new_loop_funding_round['date']  == old_funding_round['date']) and (new_loop_funding_round['amount'] == old_funding_round['amount']):
+                                            funding_round_data_existed = False
+                                            break
+                                        elif (new_loop_funding_round['stage'] == old_funding_round['stage']) and (new_loop_funding_round['date']  == old_funding_round['date']):
+                                            funding_round_data_existed = False
+                                            sql = f"UPDATE funding_rounds set amount='{new_loop_funding_round['amount']}' where id={old_funding_round['id']}"
+                                            mycursor.execute(sql)
+                                            mydb.commit()
+                                            break
+
+                                    if funding_round_data_existed:
+                                        sql = "INSERT INTO funding_rounds (funding_id,stage,date,amount) VALUES (%s,%s,%s,%s)"
+                                        val = (inner_loop_update_funding,new_loop_funding_round['stage'] ,new_loop_funding_round['date']  , new_loop_funding_round['amount'])
+                                        mycursor.execute(sql, val)
+                                        mydb.commit()
+
+                                break
+
+
                         if past_investment_existed:
 
                             try:
